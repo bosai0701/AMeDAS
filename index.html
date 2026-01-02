@@ -5,8 +5,8 @@
 <title>AMeDAS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
 
 <style>
 html, body { margin:0; padding:0; height:100%; }
@@ -39,12 +39,12 @@ select { font-size:14px; }
   line-height:1.4em;
 }
 
-.semi-transparent-popup .mapboxgl-popup-content {
+.semi-transparent-popup .maplibregl-popup-content {
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   border-radius: 6px;
 }
-.semi-transparent-popup .mapboxgl-popup-tip {
+.semi-transparent-popup .maplibregl-popup-tip {
   border-top-color: rgba(0, 0, 0, 0.6);
 }
 
@@ -84,10 +84,22 @@ select { font-size:14px; }
 <div id="legend"></div>
 
 <script>
-mapboxgl.accessToken = 'no-token-required';
+// Cookie操作関数
+function setCookie(name, value, days=365){
+  const d = new Date();
+  d.setTime(d.getTime() + days*24*60*60*1000);
+  document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
+}
+function getCookie(name){
+  const c = document.cookie.split(';').map(s=>s.trim());
+  for(const pair of c){
+    if(pair.startsWith(name+'=')) return pair.split('=')[1];
+  }
+  return null;
+}
 
-// Map初期化
-const map = new mapboxgl.Map({
+// MapLibre初期化
+const map = new maplibregl.Map({
   container: 'map',
   style: {
     version: 8,
@@ -110,158 +122,47 @@ const map = new mapboxgl.Map({
   maxPitch: 65
 });
 
-// 最新時刻取得 → yyyymmddhhmmss形式
+// 最新時刻取得 → yyyymmddhhmmss
 async function latestTime() {
   const t = await (await fetch('https://www.jma.go.jp/bosai/amedas/data/latest_time.txt')).text();
   const d = new Date(t.trim());
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
   const dd = String(d.getDate()).padStart(2,'0');
   const hh = String(d.getHours()).padStart(2,'0');
   const mi = String(Math.floor(d.getMinutes()/10)*10).padStart(2,'0');
   return `${yyyy}${mm}${dd}${hh}${mi}00`;
 }
 
-// 降雪量系は1時間刻みに切り捨て
-function truncateHour(timeStr, key) {
-  if(key.startsWith('snow')) return timeStr.slice(0,10)+'0000';
-  return timeStr;
-}
+// 降雪量は1時間刻みに切り捨て
+function truncateHour(timeStr,key){ if(key.startsWith('snow')) return timeStr.slice(0,10)+'0000'; return timeStr; }
 
 // 色関数
-function tempColor(t) { 
-  if(t>=35) return "rgb(180,0,104)";
-  if(t>=30) return "rgb(255,40,0)";
-  if(t>=25) return "rgb(255,153,0)";
-  if(t>=20) return "rgb(250,245,0)";
-  if(t>=15) return "rgb(255,255,150)";
-  if(t>=10) return "rgb(255,255,240)";
-  if(t>=5)  return "rgb(185,235,255)";
-  if(t>=0)  return "rgb(0,150,255)";
-  if(t>=-5) return "rgb(0,65,255)";
-  return "rgb(0,32,128)";
-}
-
-function sunColor(s) {
-  if(s<=0.2) return "rgb(0,65,255)";
-  if(s<=0.4) return "rgb(185,235,255)";
-  if(s<=0.6) return "rgb(250,245,0)";
-  if(s<=0.8) return "rgb(255,153,0)";
-  if(s<1.0)  return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-
-function precipitationColor(p) {
-  if(p===0||p===null) return null;
-  if(p<=1) return "rgb(242,242,255)";
-  if(p<=5) return "rgb(160,210,255)";
-  if(p<=10) return "rgb(33,140,255)";
-  if(p<=20) return "rgb(0,65,255)";
-  if(p<=50) return "rgb(250,245,0)";
-  if(p<=80) return "rgb(255,153,0)";
-  if(p<=200) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-
-function snowColor(s) {
-  if(s<=5) return "rgb(160,210,255)";
-  if(s<=20) return "rgb(33,140,255)";
-  if(s<=50) return "rgb(0,65,255)";
-  if(s<=100) return "rgb(250,245,0)";
-  if(s<=150) return "rgb(255,153,0)";
-  if(s<=200) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-
-function windColor(w) {
-  if(w<=5) return "rgb(242,242,255)";
-  if(w<=10) return "rgb(0,65,255)";
-  if(w<=15) return "rgb(250,245,0)";
-  if(w<=20) return "rgb(255,153,0)";
-  if(w<=25) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-
-function humidityColor(h) {
-  if(h<=10) return "rgb(84,6,0)";
-  if(h<=20) return "rgb(118,17,0)";
-  if(h<=30) return "rgb(171,74,1)";
-  if(h<=40) return "rgb(231,135,7)";
-  if(h<=50) return "rgb(255,200,70)";
-  if(h<=60) return "rgb(255,255,240)";
-  if(h<=70) return "rgb(128,248,231)";
-  if(h<=80) return "rgb(31,194,211)";
-  if(h<=90) return "rgb(0,114,154)";
-  if(h<=100) return "rgb(0,75,150)";
-  return "rgb(1,31,125)";
-}
-
-function getColor(key,value) {
-  if(key==='temp') return tempColor(value);
-  if(key==='humidity') return humidityColor(value);
-  if(key.startsWith('sun')) return sunColor(value);
-  if(key.startsWith('precipitation')) return precipitationColor(value)||null;
-  if(key.startsWith('snow')) return snowColor(value)||null;
-  if(key==='wind') return windColor(value);
-  return '#00ffff';
-}
-
-function formatTime(timeStr){
-  const y = timeStr.slice(0,4), m = timeStr.slice(4,6), d = timeStr.slice(6,8);
-  const h = timeStr.slice(8,10), min = timeStr.slice(10,12);
-  return `${y}-${m}-${d} ${h}:${min}`;
-}
+function tempColor(t){ if(t>=35) return "rgb(180,0,104)"; if(t>=30) return "rgb(255,40,0)"; if(t>=25) return "rgb(255,153,0)"; if(t>=20) return "rgb(250,245,0)"; if(t>=15) return "rgb(255,255,150)"; if(t>=10) return "rgb(255,255,240)"; if(t>=5) return "rgb(185,235,255)"; if(t>=0) return "rgb(0,150,255)"; if(t>=-5) return "rgb(0,65,255)"; return "rgb(0,32,128)"; }
+function sunColor(s){ if(s<=0.2) return "rgb(0,65,255)"; if(s<=0.4) return "rgb(185,235,255)"; if(s<=0.6) return "rgb(250,245,0)"; if(s<=0.8) return "rgb(255,153,0)"; if(s<1.0) return "rgb(255,40,0)"; return "rgb(180,0,104)"; }
+function precipitationColor(p){ if(p===0||p===null) return null; if(p<=1) return "rgb(242,242,255)"; if(p<=5) return "rgb(160,210,255)"; if(p<=10) return "rgb(33,140,255)"; if(p<=20) return "rgb(0,65,255)"; if(p<=50) return "rgb(250,245,0)"; if(p<=80) return "rgb(255,153,0)"; if(p<=200) return "rgb(255,40,0)"; return "rgb(180,0,104)"; }
+function snowColor(s){ if(s<=5) return "rgb(160,210,255)"; if(s<=20) return "rgb(33,140,255)"; if(s<=50) return "rgb(0,65,255)"; if(s<=100) return "rgb(250,245,0)"; if(s<=150) return "rgb(255,153,0)"; if(s<=200) return "rgb(255,40,0)"; return "rgb(180,0,104)"; }
+function windColor(w){ if(w<=5) return "rgb(242,242,255)"; if(w<=10) return "rgb(0,65,255)"; if(w<=15) return "rgb(250,245,0)"; if(w<=20) return "rgb(255,153,0)"; if(w<=25) return "rgb(255,40,0)"; return "rgb(180,0,104)"; }
+function humidityColor(h){ if(h<=10) return "rgb(84,6,0)"; if(h<=20) return "rgb(118,17,0)"; if(h<=30) return "rgb(171,74,1)"; if(h<=40) return "rgb(231,135,7)"; if(h<=50) return "rgb(255,200,70)"; if(h<=60) return "rgb(255,255,240)"; if(h<=70) return "rgb(128,248,231)"; if(h<=80) return "rgb(31,194,211)"; if(h<=90) return "rgb(0,114,154)"; if(h<=100) return "rgb(0,75,150)"; return "rgb(1,31,125)"; }
+function getColor(key,value){ if(key==='temp') return tempColor(value); if(key==='humidity') return humidityColor(value); if(key.startsWith('sun')) return sunColor(value); if(key.startsWith('precipitation')) return precipitationColor(value)||null; if(key.startsWith('snow')) return snowColor(value)||null; if(key==='wind') return windColor(value); return '#00ffff'; }
+function formatTime(timeStr){ return `${timeStr.slice(0,4)}-${timeStr.slice(4,6)}-${timeStr.slice(6,8)} ${timeStr.slice(8,10)}:${timeStr.slice(10,12)}`; }
 
 // ポップアップ
-const popup = new mapboxgl.Popup({closeButton:true, closeOnClick:true, className:'semi-transparent-popup'});
+const popup = new maplibregl.Popup({closeButton:true, closeOnClick:true, className:'semi-transparent-popup'});
 let lastKey = null;
 
-// 凡例設定
+// 凡例
 const legend = document.getElementById('legend');
 function updateLegend(key){
   const items=[];
   switch(key){
-    case 'temp':
-      items.push(
-        ["-5 以下","0,32,128"],["-5～0","0,65,255"],["0～5","0,150,255"],
-        ["5～10","185,235,255"],["10～15","255,255,240"],["15〜20","255,255,150"],
-        ["20〜25","250,245,0"],["25〜30","255,153,0"],["30〜35","255,40,0"],["35 以上","180,0,104"]
-      );
-      break;
-    case 'humidity':
-      items.push(
-        ["0〜10","84,6,0"],["10〜20","118,17,0"],["20〜30","171,74,1"],
-        ["30〜40","231,135,7"],["40〜50","255,200,70"],["50〜60","255,255,240"],
-        ["60〜70","128,248,231"],["70〜80","31,194,211"],["80〜90","0,114,154"],
-        ["90〜100","0,75,150"],["100","1,31,125"]
-      );
-      break;
-    case 'sun1h':
-      items.push(
-        ["0〜0.2","0,65,255"],["0.2〜0.4","185,235,255"],["0.4〜0.6","250,245,0"],
-        ["0.6〜0.8","255,153,0"],["0.8〜1.0","255,40,0"],["1.0","180,0,104"]
-      );
-      break;
-    case 'wind':
-      items.push(
-        ["0〜5","242,242,255"],["5〜10","0,65,255"],["10〜15","250,245,0"],
-        ["15-20","255,153,0"],["20〜25","255,40,0"],["25 以上","180,0,104"]
-      );
-      break;
-    case 'precipitation10m': case 'precipitation1h': case 'precipitation3h': case 'precipitation24h':
-      items.push(
-        ["0〜5","160,210,255"],["5〜10","33,140,255"],["10〜20","0,65,255"],
-        ["20〜30","250,245,0"],["30〜50","255,153,0"],["50〜80","255,40,0"],["80 以上","180,0,104"]
-      );
-      break;
-    case 'snow': case 'snow1h': case 'snow6h': case 'snow12h': case 'snow24h':
-      items.push(
-        ["5 以下","160,210,255"],["5〜20","33,140,255"],["20〜50","0,65,255"],
-        ["50〜100","250,245,0"],["100〜150","255,153,0"],["150〜200","255,40,0"],["200 以上","180,0,104"]
-      );
-      break;
+    case 'temp': items.push(["-5 以下","0,32,128"],["-5～0","0,65,255"],["0～5","0,150,255"],["5～10","185,235,255"],["10～15","255,255,240"],["15〜20","255,255,150"],["20〜25","250,245,0"],["25〜30","255,153,0"],["30〜35","255,40,0"],["35 以上","180,0,104"]); break;
+    case 'humidity': items.push(["0〜10","84,6,0"],["10〜20","118,17,0"],["20〜30","171,74,1"],["30〜40","231,135,7"],["40〜50","255,200,70"],["50〜60","255,255,240"],["60〜70","128,248,231"],["70〜80","31,194,211"],["80〜90","0,114,154"],["90〜100","0,75,150"],["100","1,31,125"]); break;
+    case 'sun1h': items.push(["0〜0.2","0,65,255"],["0.2〜0.4","185,235,255"],["0.4〜0.6","250,245,0"],["0.6〜0.8","255,153,0"],["0.8〜1.0","255,40,0"],["1.0","180,0,104"]); break;
+    case 'wind': items.push(["0〜5","242,242,255"],["5〜10","0,65,255"],["10〜15","250,245,0"],["15-20","255,153,0"],["20〜25","255,40,0"],["25 以上","180,0,104"]); break;
+    case 'precipitation10m': case 'precipitation1h': case 'precipitation3h': case 'precipitation24h': items.push(["0〜5","160,210,255"],["5〜10","33,140,255"],["10〜20","0,65,255"],["20〜30","250,245,0"],["30〜50","255,153,0"],["50〜80","255,40,0"],["80 以上","180,0,104"]); break;
+    case 'snow': case 'snow1h': case 'snow6h': case 'snow12h': case 'snow24h': items.push(["5 以下","160,210,255"],["5〜20","33,140,255"],["20〜50","0,65,255"],["50〜100","250,245,0"],["100〜150","255,153,0"],["150〜200","255,40,0"],["200 以上","180,0,104"]); break;
   }
-
   legend.innerHTML='';
   items.reverse().forEach(([label,color])=>{
     const div = document.createElement('div');
@@ -359,13 +260,17 @@ async function draw(key){
 }
 
 // 初回描画
-(function waitDraw(){
-  if(map.isStyleLoaded()) draw(elem.value);
-  else setTimeout(waitDraw,50);
-})();
+(function waitDraw(){ if(map.isStyleLoaded()) draw(elem.value); else setTimeout(waitDraw,50); })();
 
+// select初期値をCookieから復元
 const elem = document.getElementById('elem');
-elem.onchange = e => draw(e.target.value);
+const lastElem = getCookie('amedas_elem');
+if(lastElem) elem.value = lastElem;
+
+// select変更時にCookie更新＆描画
+elem.onchange = e => { setCookie('amedas_elem', e.target.value); draw(e.target.value); };
+
+// 定期更新
 setInterval(()=>draw(elem.value),1000);
 </script>
 </body>
