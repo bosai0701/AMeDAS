@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AMeDAS 観測点表示（リアルタイム自動更新）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+
+<style>
+html, body { margin:0; padding:0; height:100%; }
+#map { width:100%; height:100%; }
+#ui {
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:10;
+  background:rgba(0,0,0,0.7);
+  color:#fff;
+  padding:8px;
+  border-radius:6px;
+  font-size:14px;
+}
+#time { margin-bottom:4px; font-weight:bold; }
+select { font-size:14px; }
+</style>
+</head>
+
+<body>
+<div id="map"></div>
+
+<div id="ui">
+<div id="time"></div>
+表示項目：
+<select id="elem">
+  <option value="temp">気温</option>
+  <option value="humidity">湿度</option>
+  <option value="precipitation10m">10分降水量</option>
+  <option value="precipitation1h">1時間降水量</option>
+  <option value="precipitation3h">3時間降水量</option>
+  <option value="precipitation24h">24時間降水量</option>
+  <option value="wind">風速</option>
+  <option value="sun1h">日照時間</option>
+  <option value="snow">積雪深</option>
+  <option value="snow1h">1時間降雪量</option>
+  <option value="snow6h">6時間降雪量</option>
+  <option value="snow12h">12時間降雪量</option>
+  <option value="snow24h">24時間降雪量</option>
+</select>
+</div>
+
+<script>
+mapboxgl.accessToken = 'no-token-required';
+
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      google: {
+        type: 'raster',
+        tiles: ['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'],
+        tileSize: 256
+      }
+    },
+    layers: [{ id:'google', type:'raster', source:'google' }]
+  },
+  center: [138, 37],
+  zoom: 2.7,
+  pitch: 0,
+  maxPitch: 65
+});
+
+// 最新時刻取得 → yyyymmddhhmmss形式
+async function latestTime() {
+  const t = await (await fetch(
+    'https://www.jma.go.jp/bosai/amedas/data/latest_time.txt'
+  )).text();
+  const d = new Date(t.trim());
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(Math.floor(d.getMinutes()/10)*10).padStart(2,'0');
+  const ss = '00';
+  return `${yyyy}${mm}${dd}${hh}${mi}${ss}`;
+}
+
+// 降雪量系は1時間刻みに切り捨て
+function truncateHour(timeStr, key) {
+  if (key.startsWith('snow')) {
+    return timeStr.slice(0,10)+'00'+'00';
+  }
+  return timeStr;
+}
+
+// 色関数
+function tempColor(t){ if(t>=35) return"rgb(180,0,104)"; if(t>=30) return"rgb(255,40,0)"; if(t>=25) return"rgb(255,153,0)"; if(t>=20) return"rgb(250,245,0)"; if(t>=15) return"rgb(255,255,150)"; if(t>=10) return"rgb(255,255,240)"; if(t>=5) return"rgb(185,235,255)"; if(t>=0) return"rgb(0,150,255)"; if(t>=-5) return"rgb(0,65,255)"; return"rgb(0,32,128)";}
+function sunColor(s){ if(s<=0.2) return"rgb(0,65,255)"; if(s<=0.4) return"rgb(185,235,255)"; if(s<=0.6) return"rgb(250,245,0)"; if(s<=0.8) return"rgb(255,153,0)"; if(s<1.0) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
+function precipitationColor(p){ if(p===0||p===null) return null; if(p<=1) return"rgb(242,242,255)"; if(p<=5) return"rgb(160,210,255)"; if(p<=10) return"rgb(33,140,255)"; if(p<=20) return"rgb(0,65,255)"; if(p<=50) return"rgb(250,245,0)"; if(p<=80) return"rgb(255,153,0)"; if(p<=200) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
+function snowColor(s){ if(s<=5) return"rgb(160,210,255)"; if(s<=20) return"rgb(33,140,255)"; if(s<=50) return"rgb(0,65,255)"; if(s<=100) return"rgb(250,245,0)"; if(s<=150) return"rgb(255,153,0)"; if(s<=200) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
+function windColor(w){ if(w<=5) return"rgb(242,242,255)"; if(w<=10) return"rgb(0,65,255)"; if(w<=15) return"rgb(250,245,0)"; if(w<=20) return"rgb(255,153,0)"; if(w<=25) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
+
+// 新規 湿度色
+function humidityColor(h){
+  if(h<=10) return "rgb(84,6,0)";
+  if(h<=20) return "rgb(118,17,0)";
+  if(h<=30) return "rgb(171,74,1)";
+  if(h<=40) return "rgb(231,135,7)";
+  if(h<=50) return "rgb(255,200,70)";
+  if(h<=60) return "rgb(255,255,240)";
+  if(h<=70) return "rgb(128,248,231)";
+  if(h<=80) return "rgb(31,194,211)";
+  if(h<=90) return "rgb(0,114,154)";
+  if(h<=100) return "rgb(0,75,150)";
+  return "rgb(1,31,125)";
+}
+
+function getColor(key,value){
+  if(key==='temp') return tempColor(value);
+  if(key==='humidity') return humidityColor(value);
+  if(key.startsWith('sun')) return sunColor(value);
+  if(key.startsWith('precipitation')) return precipitationColor(value)||null;
+  if(key.startsWith('snow')) return snowColor(value)||null;
+  if(key==='wind') return windColor(value);
+  return'#00ffff';
+}
+
+function formatTime(timeStr){
+  const y=timeStr.slice(0,4);
+  const m=timeStr.slice(4,6);
+  const d=timeStr.slice(6,8);
+  const h=timeStr.slice(8,10);
+  const min=timeStr.slice(10,12);
+  return `${y}-${m}-${d} ${h}:${min}`;
+}
+
+async function draw(key){
+  let latest = await latestTime();
+  const fetchTime = truncateHour(latest,key);
+
+  document.getElementById('time').textContent=`時刻: ${formatTime(fetchTime)}`;
+
+  let data,table;
+  try{
+    data = await (await fetch(`https://www.jma.go.jp/bosai/amedas/data/map/${fetchTime}.json`)).json();
+    table = await (await fetch('https://www.jma.go.jp/bosai/amedas/const/amedastable.json')).json();
+  }catch(e){console.error('データ取得失敗',e);return;}
+
+  const features=[];
+  for(const code in data){
+    const point=data[code];
+    if(!point[key]) continue;
+    const value=point[key][0];
+    if((key.startsWith('precipitation')||key.startsWith('snow'))&&(value===0||value===null)) continue;
+    if(value===null) continue;
+
+    const info=table[code];
+    if(!info||!info.lat||!info.lon) continue;
+
+    const lat=Number(info.lat[0])+Number(info.lat[1]||0)/60;
+    const lon=Number(info.lon[0])+Number(info.lon[1]||0)/60;
+    if(isNaN(lat)||isNaN(lon)) continue;
+
+    const color=getColor(key,value);
+    if(!color) continue;
+
+    features.push({type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{name:info.kjName||code,value,color}});
+  }
+
+  const geojson={type:'FeatureCollection',features};
+
+  if(map.getSource('amedas')){
+    map.getSource('amedas').setData(geojson);
+  }else{
+    map.addSource('amedas',{type:'geojson',data:geojson});
+    map.addLayer({
+      id:'amedas-point',
+      type:'circle',
+      source:'amedas',
+      paint:{'circle-radius':2.5,'circle-color':['get','color'],'circle-opacity':1}
+    });
+  }
+}
+
+// 初回描画を即実行
+(function waitDraw(){
+  if(map.isStyleLoaded()){
+    draw(elem.value);
+  } else {
+    setTimeout(waitDraw,50);
+  }
+})();
+
+const elem=document.getElementById('elem');
+elem.onchange=e=>draw(e.target.value);
+
+// 毎秒自動更新
+setInterval(()=>draw(elem.value),1000);
+</script>
+</body>
+</html>
