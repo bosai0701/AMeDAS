@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AMeDAS 観測点表示（リアルタイム自動更新）</title>
+<title>AMeDAS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
@@ -11,6 +11,7 @@
 <style>
 html, body { margin:0; padding:0; height:100%; }
 #map { width:100%; height:100%; }
+
 #ui {
   position:absolute;
   top:10px;
@@ -24,6 +25,36 @@ html, body { margin:0; padding:0; height:100%; }
 }
 #time { margin-bottom:4px; font-weight:bold; }
 select { font-size:14px; }
+
+#legend {
+  position:absolute;
+  bottom:10px;
+  right:10px;
+  z-index:10;
+  background:rgba(0,0,0,0.7);
+  color:#fff;
+  padding:8px;
+  border-radius:6px;
+  font-size:12px;
+  line-height:1.4em;
+}
+
+.semi-transparent-popup .mapboxgl-popup-content {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border-radius: 6px;
+}
+.semi-transparent-popup .mapboxgl-popup-tip {
+  border-top-color: rgba(0, 0, 0, 0.6);
+}
+
+.legend-color {
+  display:inline-block;
+  width:12px;
+  height:12px;
+  margin-right:4px;
+  vertical-align:middle;
+}
 </style>
 </head>
 
@@ -31,28 +62,31 @@ select { font-size:14px; }
 <div id="map"></div>
 
 <div id="ui">
-<div id="time"></div>
-表示項目：
-<select id="elem">
-  <option value="temp">気温</option>
-  <option value="humidity">湿度</option>
-  <option value="precipitation10m">10分降水量</option>
-  <option value="precipitation1h">1時間降水量</option>
-  <option value="precipitation3h">3時間降水量</option>
-  <option value="precipitation24h">24時間降水量</option>
-  <option value="wind">風速</option>
-  <option value="sun1h">日照時間</option>
-  <option value="snow">積雪深</option>
-  <option value="snow1h">1時間降雪量</option>
-  <option value="snow6h">6時間降雪量</option>
-  <option value="snow12h">12時間降雪量</option>
-  <option value="snow24h">24時間降雪量</option>
-</select>
+  <div id="time"></div>
+  表示項目：
+  <select id="elem">
+    <option value="temp">気温(℃)</option>
+    <option value="humidity">湿度(%)</option>
+    <option value="precipitation10m">10分降水量(mm)</option>
+    <option value="precipitation1h">1時間降水量(mm)</option>
+    <option value="precipitation3h">3時間降水量(mm)</option>
+    <option value="precipitation24h">24時間降水量(mm)</option>
+    <option value="wind">風速(m/s)</option>
+    <option value="sun1h">日照時間(h)</option>
+    <option value="snow">積雪深(cm)</option>
+    <option value="snow1h">1時間降雪量(cm)</option>
+    <option value="snow6h">6時間降雪量(cm)</option>
+    <option value="snow12h">12時間降雪量(cm)</option>
+    <option value="snow24h">24時間降雪量(cm)</option>
+  </select>
 </div>
+
+<div id="legend"></div>
 
 <script>
 mapboxgl.accessToken = 'no-token-required';
 
+// Map初期化
 const map = new mapboxgl.Map({
   container: 'map',
   style: {
@@ -64,46 +98,91 @@ const map = new mapboxgl.Map({
         tileSize: 256
       }
     },
-    layers: [{ id:'google', type:'raster', source:'google' }]
+    layers: [
+      { id:'google', type:'raster', source:'google' }
+    ]
   },
-  center: [138, 37],
+  center: [138, 35.5],
   zoom: 2.7,
+  minZoom: 2,
+  maxZoom: 9,
   pitch: 0,
   maxPitch: 65
 });
 
 // 最新時刻取得 → yyyymmddhhmmss形式
 async function latestTime() {
-  const t = await (await fetch(
-    'https://www.jma.go.jp/bosai/amedas/data/latest_time.txt'
-  )).text();
+  const t = await (await fetch('https://www.jma.go.jp/bosai/amedas/data/latest_time.txt')).text();
   const d = new Date(t.trim());
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const mm = String(d.getMonth() + 1).padStart(2,'0');
   const dd = String(d.getDate()).padStart(2,'0');
   const hh = String(d.getHours()).padStart(2,'0');
   const mi = String(Math.floor(d.getMinutes()/10)*10).padStart(2,'0');
-  const ss = '00';
-  return `${yyyy}${mm}${dd}${hh}${mi}${ss}`;
+  return `${yyyy}${mm}${dd}${hh}${mi}00`;
 }
 
 // 降雪量系は1時間刻みに切り捨て
 function truncateHour(timeStr, key) {
-  if (key.startsWith('snow')) {
-    return timeStr.slice(0,10)+'00'+'00';
-  }
+  if(key.startsWith('snow')) return timeStr.slice(0,10)+'0000';
   return timeStr;
 }
 
 // 色関数
-function tempColor(t){ if(t>=35) return"rgb(180,0,104)"; if(t>=30) return"rgb(255,40,0)"; if(t>=25) return"rgb(255,153,0)"; if(t>=20) return"rgb(250,245,0)"; if(t>=15) return"rgb(255,255,150)"; if(t>=10) return"rgb(255,255,240)"; if(t>=5) return"rgb(185,235,255)"; if(t>=0) return"rgb(0,150,255)"; if(t>=-5) return"rgb(0,65,255)"; return"rgb(0,32,128)";}
-function sunColor(s){ if(s<=0.2) return"rgb(0,65,255)"; if(s<=0.4) return"rgb(185,235,255)"; if(s<=0.6) return"rgb(250,245,0)"; if(s<=0.8) return"rgb(255,153,0)"; if(s<1.0) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
-function precipitationColor(p){ if(p===0||p===null) return null; if(p<=1) return"rgb(242,242,255)"; if(p<=5) return"rgb(160,210,255)"; if(p<=10) return"rgb(33,140,255)"; if(p<=20) return"rgb(0,65,255)"; if(p<=50) return"rgb(250,245,0)"; if(p<=80) return"rgb(255,153,0)"; if(p<=200) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
-function snowColor(s){ if(s<=5) return"rgb(160,210,255)"; if(s<=20) return"rgb(33,140,255)"; if(s<=50) return"rgb(0,65,255)"; if(s<=100) return"rgb(250,245,0)"; if(s<=150) return"rgb(255,153,0)"; if(s<=200) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
-function windColor(w){ if(w<=5) return"rgb(242,242,255)"; if(w<=10) return"rgb(0,65,255)"; if(w<=15) return"rgb(250,245,0)"; if(w<=20) return"rgb(255,153,0)"; if(w<=25) return"rgb(255,40,0)"; return"rgb(180,0,104)";}
+function tempColor(t) { 
+  if(t>=35) return "rgb(180,0,104)";
+  if(t>=30) return "rgb(255,40,0)";
+  if(t>=25) return "rgb(255,153,0)";
+  if(t>=20) return "rgb(250,245,0)";
+  if(t>=15) return "rgb(255,255,150)";
+  if(t>=10) return "rgb(255,255,240)";
+  if(t>=5)  return "rgb(185,235,255)";
+  if(t>=0)  return "rgb(0,150,255)";
+  if(t>=-5) return "rgb(0,65,255)";
+  return "rgb(0,32,128)";
+}
 
-// 新規 湿度色
-function humidityColor(h){
+function sunColor(s) {
+  if(s<=0.2) return "rgb(0,65,255)";
+  if(s<=0.4) return "rgb(185,235,255)";
+  if(s<=0.6) return "rgb(250,245,0)";
+  if(s<=0.8) return "rgb(255,153,0)";
+  if(s<1.0)  return "rgb(255,40,0)";
+  return "rgb(180,0,104)";
+}
+
+function precipitationColor(p) {
+  if(p===0||p===null) return null;
+  if(p<=1) return "rgb(242,242,255)";
+  if(p<=5) return "rgb(160,210,255)";
+  if(p<=10) return "rgb(33,140,255)";
+  if(p<=20) return "rgb(0,65,255)";
+  if(p<=50) return "rgb(250,245,0)";
+  if(p<=80) return "rgb(255,153,0)";
+  if(p<=200) return "rgb(255,40,0)";
+  return "rgb(180,0,104)";
+}
+
+function snowColor(s) {
+  if(s<=5) return "rgb(160,210,255)";
+  if(s<=20) return "rgb(33,140,255)";
+  if(s<=50) return "rgb(0,65,255)";
+  if(s<=100) return "rgb(250,245,0)";
+  if(s<=150) return "rgb(255,153,0)";
+  if(s<=200) return "rgb(255,40,0)";
+  return "rgb(180,0,104)";
+}
+
+function windColor(w) {
+  if(w<=5) return "rgb(242,242,255)";
+  if(w<=10) return "rgb(0,65,255)";
+  if(w<=15) return "rgb(250,245,0)";
+  if(w<=20) return "rgb(255,153,0)";
+  if(w<=25) return "rgb(255,40,0)";
+  return "rgb(180,0,104)";
+}
+
+function humidityColor(h) {
   if(h<=10) return "rgb(84,6,0)";
   if(h<=20) return "rgb(118,17,0)";
   if(h<=30) return "rgb(171,74,1)";
@@ -117,86 +196,176 @@ function humidityColor(h){
   return "rgb(1,31,125)";
 }
 
-function getColor(key,value){
+function getColor(key,value) {
   if(key==='temp') return tempColor(value);
   if(key==='humidity') return humidityColor(value);
   if(key.startsWith('sun')) return sunColor(value);
   if(key.startsWith('precipitation')) return precipitationColor(value)||null;
   if(key.startsWith('snow')) return snowColor(value)||null;
   if(key==='wind') return windColor(value);
-  return'#00ffff';
+  return '#00ffff';
 }
 
 function formatTime(timeStr){
-  const y=timeStr.slice(0,4);
-  const m=timeStr.slice(4,6);
-  const d=timeStr.slice(6,8);
-  const h=timeStr.slice(8,10);
-  const min=timeStr.slice(10,12);
+  const y = timeStr.slice(0,4), m = timeStr.slice(4,6), d = timeStr.slice(6,8);
+  const h = timeStr.slice(8,10), min = timeStr.slice(10,12);
   return `${y}-${m}-${d} ${h}:${min}`;
 }
 
+// ポップアップ
+const popup = new mapboxgl.Popup({closeButton:true, closeOnClick:true, className:'semi-transparent-popup'});
+let lastKey = null;
+
+// 凡例設定
+const legend = document.getElementById('legend');
+function updateLegend(key){
+  const items=[];
+  switch(key){
+    case 'temp':
+      items.push(
+        ["-5 以下","0,32,128"],["-5～0","0,65,255"],["0～5","0,150,255"],
+        ["5～10","185,235,255"],["10～15","255,255,240"],["15〜20","255,255,150"],
+        ["20〜25","250,245,0"],["25〜30","255,153,0"],["30〜35","255,40,0"],["35 以上","180,0,104"]
+      );
+      break;
+    case 'humidity':
+      items.push(
+        ["0〜10","84,6,0"],["10〜20","118,17,0"],["20〜30","171,74,1"],
+        ["30〜40","231,135,7"],["40〜50","255,200,70"],["50〜60","255,255,240"],
+        ["60〜70","128,248,231"],["70〜80","31,194,211"],["80〜90","0,114,154"],
+        ["90〜100","0,75,150"],["100","1,31,125"]
+      );
+      break;
+    case 'sun1h':
+      items.push(
+        ["0〜0.2","0,65,255"],["0.2〜0.4","185,235,255"],["0.4〜0.6","250,245,0"],
+        ["0.6〜0.8","255,153,0"],["0.8〜1.0","255,40,0"],["1.0","180,0,104"]
+      );
+      break;
+    case 'wind':
+      items.push(
+        ["0〜5","242,242,255"],["5〜10","0,65,255"],["10〜15","250,245,0"],
+        ["15-20","255,153,0"],["20〜25","255,40,0"],["25 以上","180,0,104"]
+      );
+      break;
+    case 'precipitation10m': case 'precipitation1h': case 'precipitation3h': case 'precipitation24h':
+      items.push(
+        ["0〜5","160,210,255"],["5〜10","33,140,255"],["10〜20","0,65,255"],
+        ["20〜30","250,245,0"],["30〜50","255,153,0"],["50〜80","255,40,0"],["80 以上","180,0,104"]
+      );
+      break;
+    case 'snow': case 'snow1h': case 'snow6h': case 'snow12h': case 'snow24h':
+      items.push(
+        ["5 以下","160,210,255"],["5〜20","33,140,255"],["20〜50","0,65,255"],
+        ["50〜100","250,245,0"],["100〜150","255,153,0"],["150〜200","255,40,0"],["200 以上","180,0,104"]
+      );
+      break;
+  }
+
+  legend.innerHTML='';
+  items.reverse().forEach(([label,color])=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<span class="legend-color" style="background:rgb(${color})"></span>${label}`;
+    legend.appendChild(div);
+  });
+}
+
+// 描画
 async function draw(key){
+  updateLegend(key);
+  if(lastKey && lastKey !== key && popup.isOpen()) popup.remove();
+  lastKey = key;
+
   let latest = await latestTime();
   const fetchTime = truncateHour(latest,key);
+  document.getElementById('time').textContent = `時刻: ${formatTime(fetchTime)}`;
 
-  document.getElementById('time').textContent=`時刻: ${formatTime(fetchTime)}`;
-
-  let data,table;
-  try{
+  let data, table;
+  try {
     data = await (await fetch(`https://www.jma.go.jp/bosai/amedas/data/map/${fetchTime}.json`)).json();
     table = await (await fetch('https://www.jma.go.jp/bosai/amedas/const/amedastable.json')).json();
-  }catch(e){console.error('データ取得失敗',e);return;}
+  } catch(e){ console.error('データ取得失敗', e); return; }
 
   const features=[];
   for(const code in data){
-    const point=data[code];
+    const point = data[code];
     if(!point[key]) continue;
-    const value=point[key][0];
+    const value = point[key][0];
     if((key.startsWith('precipitation')||key.startsWith('snow'))&&(value===0||value===null)) continue;
     if(value===null) continue;
 
-    const info=table[code];
+    const info = table[code];
     if(!info||!info.lat||!info.lon) continue;
 
-    const lat=Number(info.lat[0])+Number(info.lat[1]||0)/60;
-    const lon=Number(info.lon[0])+Number(info.lon[1]||0)/60;
+    const lat = Number(info.lat[0]) + Number(info.lat[1]||0)/60;
+    const lon = Number(info.lon[0]) + Number(info.lon[1]||0)/60;
     if(isNaN(lat)||isNaN(lon)) continue;
 
-    const color=getColor(key,value);
+    const color = getColor(key,value);
     if(!color) continue;
 
-    features.push({type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{name:info.kjName||code,value,color}});
+    features.push({
+      type:'Feature',
+      geometry:{type:'Point',coordinates:[lon,lat]},
+      properties:{name:info.kjName||code,value,color}
+    });
   }
 
   const geojson={type:'FeatureCollection',features};
 
   if(map.getSource('amedas')){
     map.getSource('amedas').setData(geojson);
-  }else{
+  } else {
     map.addSource('amedas',{type:'geojson',data:geojson});
     map.addLayer({
-      id:'amedas-point',
+      id:'amedas-point-display',
       type:'circle',
       source:'amedas',
       paint:{'circle-radius':2.5,'circle-color':['get','color'],'circle-opacity':1}
     });
+    map.addLayer({
+      id:'amedas-point-hit',
+      type:'circle',
+      source:'amedas',
+      paint:{'circle-radius':15,'circle-opacity':0}
+    });
+
+    map.on('click','amedas-point-hit', e=>{
+      const f = e.features[0];
+      let valueText = f.properties.value;
+      switch(elem.value){
+        case 'temp': valueText = `気温: ${f.properties.value} ℃`; break;
+        case 'humidity': valueText = `湿度: ${f.properties.value} %`; break;
+        case 'precipitation10m': valueText = `降水量10m: ${f.properties.value} mm`; break;
+        case 'precipitation1h': valueText = `降水量1h: ${f.properties.value} mm`; break;
+        case 'precipitation3h': valueText = `降水量3h: ${f.properties.value} mm`; break;
+        case 'precipitation24h': valueText = `降水量24h: ${f.properties.value} mm`; break;
+        case 'wind': valueText = `風速: ${f.properties.value} m/s`; break;
+        case 'sun1h': valueText = `日照時間: ${f.properties.value} h`; break;
+        case 'snow': valueText = `積雪深: ${f.properties.value} cm`; break;
+        case 'snow1h': valueText = `降雪量1h: ${f.properties.value} cm`; break;
+        case 'snow6h': valueText = `降雪量6h: ${f.properties.value} cm`; break;
+        case 'snow12h': valueText = `降雪量12h: ${f.properties.value} cm`; break;
+        case 'snow24h': valueText = `降雪量24h: ${f.properties.value} cm`; break;
+      }
+      popup.setLngLat(f.geometry.coordinates)
+           .setHTML(`<strong>${f.properties.name}</strong><br>${valueText}`)
+           .addTo(map);
+    });
+
+    map.on('mouseenter','amedas-point-hit',()=>map.getCanvas().style.cursor='pointer');
+    map.on('mouseleave','amedas-point-hit',()=>map.getCanvas().style.cursor='');
   }
 }
 
-// 初回描画を即実行
+// 初回描画
 (function waitDraw(){
-  if(map.isStyleLoaded()){
-    draw(elem.value);
-  } else {
-    setTimeout(waitDraw,50);
-  }
+  if(map.isStyleLoaded()) draw(elem.value);
+  else setTimeout(waitDraw,50);
 })();
 
-const elem=document.getElementById('elem');
-elem.onchange=e=>draw(e.target.value);
-
-// 毎秒自動更新
+const elem = document.getElementById('elem');
+elem.onchange = e => draw(e.target.value);
 setInterval(()=>draw(elem.value),1000);
 </script>
 </body>
