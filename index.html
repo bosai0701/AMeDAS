@@ -213,14 +213,14 @@ function sunColor(s) {
   return "rgb(180,0,104)";
 }
 function precipitationColor(p) {
-  if (p === 0 || p === null) return null;
-  if (p <= 0.9) return null;
-  if (p <= 4.9) return "rgb(160,210,255)";
-  if (p <= 9.9) return "rgb(33,140,255)";
-  if (p <= 19.9) return "rgb(0,65,255)";
-  if (p <= 29.9) return "rgb(250,245,0)";
-  if (p <= 49.9) return "rgb(255,153,0)";
-  if (p <= 79.9) return "rgb(255,40,0)";
+  if (p === 0 || p === null) return null;   // 0は表示しない
+  if (p <= 0.5) return "rgb(242,242,255)";
+  if (p <= 4.5) return "rgb(160,210,255)";
+  if (p <= 9.5) return "rgb(33,140,255)";
+  if (p <= 19.5) return "rgb(0,65,255)";
+  if (p <= 29.5) return "rgb(250,245,0)";
+  if (p <= 49.5) return "rgb(255,153,0)";
+  if (p <= 79.5) return "rgb(255,40,0)";
   return "rgb(180,0,104)";
 }
 function snowColor(s) {
@@ -309,9 +309,9 @@ function updateLegend(key) {
     case 'precipitation3h':
     case 'precipitation24h':
       items.push(
-        ["0〜0.9","242,242,255"],["1〜4.9","160,210,255"],["5〜9.9","33,140,255"],
-        ["10〜19.9","0,65,255"],["20〜29.9","250,245,0"],["30〜49.9","255,153,0"],
-        ["50〜79.9","255,40,0"],["80以上","180,0,104"]
+        ["0〜0.5","242,242,255"],["1〜4.5","160,210,255"],["5〜9.5","33,140,255"],
+        ["10〜19.5","0,65,255"],["20〜29.5","250,245,0"],["30〜49.5","255,153,0"],
+        ["50〜79.5","255,40,0"],["80以上","180,0,104"]
       );
       break;
     case 'snow':
