@@ -23,69 +23,12 @@ html, body {
   height: 100%;
 }
 
-/* ===== UI ===== */
-#ui {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 10;
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  padding: 6px;
-  border-radius: 5px;
-  font-size: 12px;
-}
-#time {
-  margin-bottom: 3px;
-  font-weight: bold;
-}
-select {
-  font-size: 12px;
-}
-
-/* ===== 凡例 ===== */
-#legend {
-  position: absolute;
-  bottom: 38px;
-  right: 8px;
-  z-index: 10;
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  padding: 6px;
-  border-radius: 5px;
-  font-size: 11px;
-  line-height: 1.3em;
-}
-.legend-color {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 4px;
-  vertical-align: middle;
-}
-
-/* ===== Google 著作権 ===== */
-#google-attribution {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 9;
-  font-size: 11px;
-  color: #fff;
-  background: rgba(0,0,0,0.7);
-  padding: 2px 6px;
-  border-radius: 4px;
-  pointer-events: none;
-}
-
 /* ===== ポップアップ ===== */
 .semi-transparent-popup .maplibregl-popup-content {
   background: rgba(0,0,0,0.6);
   color: #fff;
   border-radius: 6px;
 }
-
-/* 矢印（全方向） */
 .semi-transparent-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
   border-bottom-color: rgba(0,0,0,0.6);
 }
@@ -106,34 +49,20 @@ select {
 .semi-transparent-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
   border-top-color: rgba(0,0,0,0.6);
 }
+
+/* ===== 凡例カラー ===== */
+.legend-color {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
 </style>
 </head>
 
 <body>
 <div id="map"></div>
-
-<div id="ui">
-  <div id="time"></div>
-  表示項目：
-  <select id="elem">
-    <option value="temp">気温(℃)</option>
-    <option value="humidity">湿度(%)</option>
-    <option value="precipitation10m">10分降水量(mm)</option>
-    <option value="precipitation1h">1時間降水量(mm)</option>
-    <option value="precipitation3h">3時間降水量(mm)</option>
-    <option value="precipitation24h">24時間降水量(mm)</option>
-    <option value="wind">風速(m/s)</option>
-    <option value="sun1h">日照時間(h)</option>
-    <option value="snow">積雪深(cm)</option>
-    <option value="snow1h">1時間降雪量(cm)</option>
-    <option value="snow6h">6時間降雪量(cm)</option>
-    <option value="snow12h">12時間降雪量(cm)</option>
-    <option value="snow24h">24時間降雪量(cm)</option>
-  </select>
-</div>
-
-<div id="legend"></div>
-<div id="google-attribution">© Google</div>
 
 <script>
 /* ===== Cookie ===== */
@@ -149,6 +78,74 @@ function getCookie(name) {
   }
   return null;
 }
+
+/* ===== UI 要素生成 ===== */
+const ui = document.createElement('div');
+ui.id = 'ui';
+ui.style.position = 'absolute';
+ui.style.top = '8px';
+ui.style.left = '8px';
+ui.style.zIndex = 10;
+ui.style.background = 'rgba(0,0,0,0.7)';
+ui.style.color = '#fff';
+ui.style.padding = '6px';
+ui.style.borderRadius = '5px';
+ui.style.fontSize = '12px';
+
+const timeDiv = document.createElement('div');
+timeDiv.id = 'time';
+timeDiv.style.marginBottom = '3px';
+timeDiv.style.fontWeight = 'bold';
+ui.appendChild(timeDiv);
+
+ui.appendChild(document.createTextNode('表示項目：'));
+
+const elem = document.createElement('select');
+elem.id = 'elem';
+elem.style.fontSize = '12px';
+const options = [
+  ['temp','気温(℃)'],['humidity','湿度(%)'],['precipitation10m','10分降水量(mm)'],
+  ['precipitation1h','1時間降水量(mm)'],['precipitation3h','3時間降水量(mm)'],['precipitation24h','24時間降水量(mm)'],
+  ['wind','風速(m/s)'],['sun1h','日照時間(h)'],['snow','積雪深(cm)'],
+  ['snow1h','1時間降雪量(cm)'],['snow6h','6時間降雪量(cm)'],['snow12h','12時間降雪量(cm)'],['snow24h','24時間降雪量(cm)']
+];
+options.forEach(([value,text]) => {
+  const o = document.createElement('option');
+  o.value = value;
+  o.textContent = text;
+  elem.appendChild(o);
+});
+ui.appendChild(elem);
+document.body.appendChild(ui);
+
+const legend = document.createElement('div');
+legend.id = 'legend';
+legend.style.position = 'absolute';
+legend.style.bottom = '38px';
+legend.style.right = '8px';
+legend.style.zIndex = 10;
+legend.style.background = 'rgba(0,0,0,0.7)';
+legend.style.color = '#fff';
+legend.style.padding = '6px';
+legend.style.borderRadius = '5px';
+legend.style.fontSize = '11px';
+legend.style.lineHeight = '1.3em';
+document.body.appendChild(legend);
+
+const googleAttribution = document.createElement('div');
+googleAttribution.id = 'google-attribution';
+googleAttribution.textContent = '© Google';
+googleAttribution.style.position = 'absolute';
+googleAttribution.style.right = '8px';
+googleAttribution.style.bottom = '8px';
+googleAttribution.style.zIndex = 9;
+googleAttribution.style.fontSize = '11px';
+googleAttribution.style.color = '#fff';
+googleAttribution.style.background = 'rgba(0,0,0,0.7)';
+googleAttribution.style.padding = '2px 6px';
+googleAttribution.style.borderRadius = '4px';
+googleAttribution.style.pointerEvents = 'none';
+document.body.appendChild(googleAttribution);
 
 /* ===== MapLibre 初期化 ===== */
 const map = new maplibregl.Map({
@@ -174,7 +171,8 @@ const map = new maplibregl.Map({
   maxPitch: 65
 });
 
-/* ===== 時刻処理 ===== */
+/* ===== 以下、あなたが送ったコードをそのままコピー ===== */
+/* 時刻処理 */
 async function latestTime() {
   const t = await (await fetch('https://www.jma.go.jp/bosai/amedas/data/latest_time.txt')).text();
   const d = new Date(t.trim());
@@ -276,7 +274,6 @@ const popup = new maplibregl.Popup({
 let lastKey = null;
 
 /* ===== 凡例 ===== */
-const legend = document.getElementById('legend');
 function updateLegend(key) {
   const items = [];
   switch (key) {
@@ -451,7 +448,6 @@ async function draw(key) {
 })();
 
 /* ===== select & Cookie ===== */
-const elem = document.getElementById('elem');
 const lastElem = getCookie('amedas_elem');
 if (lastElem) elem.value = lastElem;
 
