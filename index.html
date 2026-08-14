@@ -4,460 +4,1426 @@
 <meta charset="UTF-8">
 <title>AMeDAS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link rel="icon" href="favicon.ico">
-<link rel="apple-touch-icon" href="favicon.ico">
-<!-- MapLibre -->
 <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
 
 <style>
-/* ===== 基本レイアウト ===== */
-html, body {
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  height: 100%;
 }
+
+html,
+body {
+  height: 100%;
+  background: #000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #e2e8f0;
+}
+
 #map {
   width: 100%;
   height: 100%;
 }
 
 /* ===== ポップアップ ===== */
+
 .semi-transparent-popup .maplibregl-popup-content {
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  border-radius: 6px;
-}
-.semi-transparent-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
-  border-bottom-color: rgba(0,0,0,0.6);
-}
-.semi-transparent-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-  border-top-color: rgba(0,0,0,0.6);
-}
-.semi-transparent-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
-  border-right-color: rgba(0,0,0,0.6);
-}
-.semi-transparent-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
-  border-left-color: rgba(0,0,0,0.6);
-}
-.semi-transparent-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-.semi-transparent-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
-  border-bottom-color: rgba(0,0,0,0.6);
-}
-.semi-transparent-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-.semi-transparent-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
-  border-top-color: rgba(0,0,0,0.6);
+  background: rgba(8, 18, 32, 0.96);
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  border-radius: 10px;
+  padding: 11px 15px;
+  font-size: 13px;
+  color: #e2e8f0;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(0,210,255,0.1);
 }
 
-/* ===== 凡例カラー ===== */
+.semi-transparent-popup .maplibregl-popup-content strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #00D4FF;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.semi-transparent-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: rgba(8,18,32,0.96);
+}
+
+.semi-transparent-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: rgba(8,18,32,0.96);
+}
+
+.semi-transparent-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: rgba(8,18,32,0.96);
+}
+
+.semi-transparent-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: rgba(8,18,32,0.96);
+}
+
+/* ===== 左上パネル ===== */
+
+#panel-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: rgba(8,18,32,0.88);
+  border: 1px solid rgba(0,210,255,0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  width: 210px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+}
+
+#panel-top .panel-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(0,210,255,0.55);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+#time {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #00D4FF;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  text-shadow: 0 0 12px rgba(0,212,255,0.4);
+}
+
+#elem {
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(0,210,255,0.07);
+  border: 1px solid rgba(0,210,255,0.25);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2300d4ff'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+#elem:hover {
+  background-color: rgba(0,210,255,0.12);
+  border-color: rgba(0,210,255,0.5);
+}
+
+#elem:focus {
+  outline: none;
+  border-color: rgba(0,210,255,0.7);
+  box-shadow: 0 0 0 3px rgba(0,210,255,0.12);
+}
+
+#elem option {
+  background: #0d1f38;
+  color: #e2e8f0;
+}
+
+/* ===== 凡例 ===== */
+
+#legend {
+  position: absolute;
+  bottom: 80px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(8,18,32,0.88);
+  border: 1px solid rgba(0,210,255,0.18);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 11px;
+  line-height: 1.75;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+}
+
 .legend-color {
   display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  margin-right: 7px;
   vertical-align: middle;
+}
+
+/* ===== Google帰属 ===== */
+
+#google-attr {
+  position: absolute;
+  right: 12px;
+  bottom: 48px;
+  z-index: 9;
+  font-size: 10px;
+  color: rgba(200,210,220,0.5);
+  pointer-events: none;
+}
+
+/* ===== スライダーパネル ===== */
+
+#slider-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: linear-gradient(
+    to top,
+    rgba(6,14,26,0.97) 0%,
+    rgba(6,14,26,0.85) 100%
+  );
+  border-top: 1px solid rgba(0,210,255,0.15);
+  backdrop-filter: blur(12px);
+  padding: 12px 24px 14px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+#slider-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+
+#slider-info .s-label {
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(0,210,255,0.5);
+  font-weight: 700;
+}
+
+#slider-offset {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #00D4FF;
+  text-shadow: 0 0 10px rgba(0,212,255,0.35);
+  line-height: 1;
+}
+
+#slider-wrap {
+  flex: 1;
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+#time-slider {
+  width: 100%;
+  height: 3px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(0,210,255,0.15);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+#time-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(0,210,255,0.15);
+}
+
+#time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #4af0ff,
+    #00a8cc
+  );
+  box-shadow:
+    0 0 0 3px rgba(0,210,255,0.15),
+    0 0 16px rgba(0,210,255,0.55);
+  border: 2px solid rgba(255,255,255,0.25);
+  cursor: grab;
+  margin-top: -10px;
+}
+
+#time-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #4af0ff,
+    #00a8cc
+  );
+  box-shadow:
+    0 0 0 3px rgba(0,210,255,0.15),
+    0 0 16px rgba(0,210,255,0.55);
+  border: 2px solid rgba(255,255,255,0.25);
+  cursor: grab;
+}
+
+#time-slider::-moz-range-track {
+  background: rgba(0,210,255,0.15);
+  border: none;
+  height: 3px;
+}
+
+#time-slider::-moz-range-progress {
+  background: linear-gradient(
+    to right,
+    #0076a8,
+    #00D4FF
+  );
+  height: 3px;
+  border-radius: 2px;
+}
+
+#slider-progress {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    #0076a8,
+    #00D4FF
+  );
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 0 0 6px rgba(0,212,255,0.4);
+}
+
+#live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #00D4FF;
+  white-space: nowrap;
+  min-width: 56px;
+}
+
+#live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00D4FF;
+  box-shadow: 0 0 6px #00D4FF;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,100% {
+    opacity: 1;
+    box-shadow: 0 0 6px #00D4FF;
+  }
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 2px #00D4FF;
+  }
+}
+
+#live-badge.past #live-dot {
+  background: #7a9ab5;
+  box-shadow: 0 0 4px #7a9ab5;
+  animation: none;
+}
+
+#live-badge.past {
+  color: #7a9ab5;
 }
 </style>
 </head>
 
 <body>
+
 <div id="map"></div>
 
 <script>
-/* ===== Cookie ===== */
-function setCookie(name, value, days = 365) {
-  const d = new Date();
-  d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
+
+/* =========================================================
+   Cookie
+========================================================= */
+
+function setCookie(n, v, d = 365) {
+  const e = new Date();
+  e.setTime(e.getTime() + d * 864e5);
+  document.cookie =
+    `${n}=${v};expires=${e.toUTCString()};path=/`;
 }
-function getCookie(name) {
-  const c = document.cookie.split(';').map(s => s.trim());
-  for (const pair of c) {
-    if (pair.startsWith(name + '=')) return pair.split('=')[1];
+
+function getCookie(n) {
+  for (
+    const p of document.cookie
+      .split(';')
+      .map(s => s.trim())
+  ) {
+    if (p.startsWith(n + '=')) {
+      return p.split('=')[1];
+    }
   }
   return null;
 }
 
-/* ===== UI 要素生成 ===== */
-const ui = document.createElement('div');
-ui.id = 'ui';
-ui.style.position = 'absolute';
-ui.style.top = '8px';
-ui.style.left = '8px';
-ui.style.zIndex = 10;
-ui.style.background = 'rgba(0,0,0,0.7)';
-ui.style.color = '#fff';
-ui.style.padding = '6px';
-ui.style.borderRadius = '5px';
-ui.style.fontSize = '12px';
 
-const timeDiv = document.createElement('div');
-timeDiv.id = 'time';
-timeDiv.style.marginBottom = '3px';
-timeDiv.style.fontWeight = 'bold';
-ui.appendChild(timeDiv);
+/* =========================================================
+   左上パネル
+========================================================= */
 
-ui.appendChild(document.createTextNode('表示項目：'));
+const panelTop = document.createElement('div');
+panelTop.id = 'panel-top';
+
+panelTop.innerHTML = `
+  <div class="panel-label">観測時刻</div>
+  <div id="time">--:--</div>
+  <div class="panel-label">表示項目</div>
+`;
 
 const elem = document.createElement('select');
 elem.id = 'elem';
-elem.style.fontSize = '12px';
-const options = [
-  ['temp','気温(℃)'],['humidity','湿度(%)'],['precipitation10m','10分降水量(mm)'],
-  ['precipitation1h','1時間降水量(mm)'],['precipitation3h','3時間降水量(mm)'],['precipitation24h','24時間降水量(mm)'],
-  ['wind','風速(m/s)'],['sun1h','日照時間(h)'],['snow','積雪深(cm)'],
-  ['snow1h','1時間降雪量(cm)'],['snow6h','6時間降雪量(cm)'],['snow12h','12時間降雪量(cm)'],['snow24h','24時間降雪量(cm)']
-];
-options.forEach(([value,text]) => {
+
+[
+  ['temp','気温 (℃)'],
+  ['humidity','湿度 (%)'],
+  ['precipitation10m','降水量 10分 (mm)'],
+  ['precipitation1h','降水量 1時間 (mm)'],
+  ['precipitation3h','降水量 3時間 (mm)'],
+  ['precipitation24h','降水量 24時間 (mm)'],
+  ['wind','風速 (m/s)'],
+  ['sun1h','日照時間 (h)'],
+  ['snow','積雪深 (cm)'],
+  ['snow1h','降雪量 1時間 (cm)'],
+  ['snow6h','降雪量 6時間 (cm)'],
+  ['snow12h','降雪量 12時間 (cm)'],
+  ['snow24h','降雪量 24時間 (cm)']
+].forEach(([v,t]) => {
   const o = document.createElement('option');
-  o.value = value;
-  o.textContent = text;
+  o.value = v;
+  o.textContent = t;
   elem.appendChild(o);
 });
-ui.appendChild(elem);
-document.body.appendChild(ui);
+
+panelTop.appendChild(elem);
+document.body.appendChild(panelTop);
+
+
+/* =========================================================
+   凡例
+========================================================= */
 
 const legend = document.createElement('div');
 legend.id = 'legend';
-legend.style.position = 'absolute';
-legend.style.bottom = '38px';
-legend.style.right = '8px';
-legend.style.zIndex = 10;
-legend.style.background = 'rgba(0,0,0,0.7)';
-legend.style.color = '#fff';
-legend.style.padding = '6px';
-legend.style.borderRadius = '5px';
-legend.style.fontSize = '11px';
-legend.style.lineHeight = '1.3em';
 document.body.appendChild(legend);
 
-const googleAttribution = document.createElement('div');
-googleAttribution.id = 'google-attribution';
-googleAttribution.textContent = '© Google';
-googleAttribution.style.position = 'absolute';
-googleAttribution.style.right = '8px';
-googleAttribution.style.bottom = '8px';
-googleAttribution.style.zIndex = 9;
-googleAttribution.style.fontSize = '11px';
-googleAttribution.style.color = '#fff';
-googleAttribution.style.background = 'rgba(0,0,0,0.7)';
-googleAttribution.style.padding = '2px 6px';
-googleAttribution.style.borderRadius = '4px';
-googleAttribution.style.pointerEvents = 'none';
-document.body.appendChild(googleAttribution);
 
-/* ===== MapLibre 初期化 ===== */
+/* =========================================================
+   Google帰属
+========================================================= */
+
+const gAttr = document.createElement('div');
+gAttr.id = 'google-attr';
+gAttr.textContent = '© Google';
+document.body.appendChild(gAttr);
+
+
+/* =========================================================
+   スライダー
+========================================================= */
+
+const MAX_STEPS = 1008;
+
+const sliderPanel = document.createElement('div');
+sliderPanel.id = 'slider-panel';
+
+const sliderInfo = document.createElement('div');
+sliderInfo.id = 'slider-info';
+
+sliderInfo.innerHTML = `
+  <div class="s-label">遡る時間</div>
+  <div id="slider-offset">LIVE</div>
+`;
+
+sliderPanel.appendChild(sliderInfo);
+
+const sliderWrap = document.createElement('div');
+sliderWrap.id = 'slider-wrap';
+
+const sliderProgress = document.createElement('div');
+sliderProgress.id = 'slider-progress';
+
+sliderWrap.appendChild(sliderProgress);
+
+const slider = document.createElement('input');
+
+slider.id = 'time-slider';
+slider.type = 'range';
+slider.min = '0';
+slider.max = String(MAX_STEPS);
+slider.value = String(MAX_STEPS);
+
+sliderWrap.appendChild(slider);
+sliderPanel.appendChild(sliderWrap);
+
+
+/* =========================================================
+   LIVE / PAST
+========================================================= */
+
+const liveBadge = document.createElement('div');
+
+liveBadge.id = 'live-badge';
+
+liveBadge.innerHTML = `
+  <div id="live-dot"></div>
+  <span>LIVE</span>
+`;
+
+sliderPanel.appendChild(liveBadge);
+document.body.appendChild(sliderPanel);
+
+
+/* =========================================================
+   MapLibre
+========================================================= */
+
 const map = new maplibregl.Map({
+
   container: 'map',
+
   style: {
     version: 8,
+
     sources: {
       google: {
         type: 'raster',
-        tiles: ['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'],
+
+        tiles: [
+          'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'
+        ],
+
         tileSize: 256
       }
     },
+
     layers: [
-      { id: 'google', type: 'raster', source: 'google' }
+      {
+        id: 'google',
+        type: 'raster',
+        source: 'google'
+      }
     ]
   },
+
   center: [138, 35.2],
+
   zoom: 2.7,
+
   minZoom: 2,
+
   maxZoom: 9,
+
   pitch: 0,
+
   maxPitch: 65
 });
 
-/* ===== 以下、あなたが送ったコードをそのままコピー ===== */
-/* 時刻処理 */
+
+/* =========================================================
+   時刻
+========================================================= */
+
 async function latestTime() {
-  const t = await (await fetch('https://www.jma.go.jp/bosai/amedas/data/latest_time.txt')).text();
+
+  const response = await fetch(
+    'https://www.jma.go.jp/bosai/amedas/data/latest_time.txt',
+    {
+      cache: 'no-store'
+    }
+  );
+
+  const t = await response.text();
+
   const d = new Date(t.trim());
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(Math.floor(d.getMinutes() / 10) * 10).padStart(2, '0');
-  return `${yyyy}${mm}${dd}${hh}${mi}00`;
-}
-function truncateHour(timeStr, key) {
-  if (key.startsWith('snow')) return timeStr.slice(0, 10) + '0000';
-  return timeStr;
-}
-function formatTime(timeStr) {
-  return `${timeStr.slice(0,4)}-${timeStr.slice(4,6)}-${timeStr.slice(6,8)} ${timeStr.slice(8,10)}:${timeStr.slice(10,12)}`;
+
+  const pad = n =>
+    String(n).padStart(2,'0');
+
+  return `${d.getFullYear()}${
+    pad(d.getMonth() + 1)
+  }${
+    pad(d.getDate())
+  }${
+    pad(d.getHours())
+  }${
+    pad(Math.floor(d.getMinutes() / 10) * 10)
+  }00`;
 }
 
-/* ===== 色関数 ===== */
-function tempColor(t) {
-  if (t >= 35) return "rgb(180,0,104)";
-  if (t >= 30) return "rgb(255,40,0)";
-  if (t >= 25) return "rgb(255,153,0)";
-  if (t >= 20) return "rgb(250,245,0)";
-  if (t >= 15) return "rgb(255,255,150)";
-  if (t >= 10) return "rgb(255,255,240)";
-  if (t >= 5)  return "rgb(185,235,255)";
-  if (t >= 0)  return "rgb(0,150,255)";
-  if (t >= -4.9) return "rgb(0,65,255)";
-  return "rgb(0,32,128)";
-}
-function sunColor(s) {
-  if (s <= 0.1) return "rgb(0,65,255)";
-  if (s <= 0.3) return "rgb(185,235,255)";
-  if (s <= 0.5) return "rgb(250,245,0)";
-  if (s <= 0.7) return "rgb(255,153,0)";
-  if (s <= 0.9) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-function precipitationColor(p) {
-  if (p === 0 || p === null) return null;   // 0は表示しない
-  if (p <= 0.5) return "rgb(242,242,255)";
-  if (p <= 4.5) return "rgb(160,210,255)";
-  if (p <= 9.5) return "rgb(33,140,255)";
-  if (p <= 19.5) return "rgb(0,65,255)";
-  if (p <= 29.5) return "rgb(250,245,0)";
-  if (p <= 49.5) return "rgb(255,153,0)";
-  if (p <= 79.5) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-function snowColor(s) {
-  if (s === 0 || s === null) return null;
-  if (s <= 5) return "rgb(160,210,255)";
-  if (s <= 19) return "rgb(33,140,255)";
-  if (s <= 49) return "rgb(0,65,255)";
-  if (s <= 99) return "rgb(250,245,0)";
-  if (s <= 149) return "rgb(255,153,0)";
-  if (s <= 199) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-function windColor(w) {
-  if (w === 0 || w === null) return null;
-  if (w <= 5.9) return "rgb(242,242,255)";
-  if (w <= 9.9) return "rgb(0,65,255)";
-  if (w <= 14.9) return "rgb(250,245,0)";
-  if (w <= 19.9) return "rgb(255,153,0)";
-  if (w <= 24.9) return "rgb(255,40,0)";
-  return "rgb(180,0,104)";
-}
-function humidityColor(h) {
-  if (h <= 9) return "rgb(84,6,0)";
-  if (h <= 19) return "rgb(118,17,0)";
-  if (h <= 29) return "rgb(171,74,1)";
-  if (h <= 39) return "rgb(231,135,7)";
-  if (h <= 49) return "rgb(255,200,70)";
-  if (h <= 59) return "rgb(255,255,240)";
-  if (h <= 69) return "rgb(128,248,231)";
-  if (h <= 79) return "rgb(31,194,211)";
-  if (h <= 89) return "rgb(0,114,154)";
-  if (h <= 99) return "rgb(0,75,150)";
-  return "rgb(1,31,125)";
-}
-function getColor(key, value) {
-  if (key === 'temp') return tempColor(value);
-  if (key === 'humidity') return humidityColor(value);
-  if (key.startsWith('sun')) return sunColor(value);
-  if (key.startsWith('precipitation')) return precipitationColor(value);
-  if (key.startsWith('snow')) return snowColor(value);
-  if (key === 'wind') return windColor(value);
-  return '#00ffff';
+
+function truncateHour(s, key) {
+
+  return key.startsWith('snow')
+    ? s.slice(0,10) + '0000'
+    : s;
 }
 
-/* ===== ポップアップ ===== */
+
+function formatTime(s) {
+
+  return `${s.slice(0,4)}-${
+    s.slice(4,6)
+  }-${
+    s.slice(6,8)
+  } ${
+    s.slice(8,10)
+  }:${
+    s.slice(10,12)
+  }`;
+}
+
+
+function subtractMinutes(s, min) {
+
+  const d = new Date(
+    +s.slice(0,4),
+    +s.slice(4,6) - 1,
+    +s.slice(6,8),
+    +s.slice(8,10),
+    +s.slice(10,12)
+  );
+
+  d.setMinutes(d.getMinutes() - min);
+
+  const pad = n =>
+    String(n).padStart(2,'0');
+
+  return `${d.getFullYear()}${
+    pad(d.getMonth() + 1)
+  }${
+    pad(d.getDate())
+  }${
+    pad(d.getHours())
+  }${
+    pad(d.getMinutes())
+  }00`;
+}
+
+
+/* =========================================================
+   凡例
+========================================================= */
+
+const elementLegends = {
+
+  temp: [
+    [-25, 'rgb(168,163,197)'],
+    [-20, 'rgb(119,111,164)'],
+    [-15, 'rgb(77,68,113)'],
+    [-10, 'rgb(0,32,128)'],
+    [-5, 'rgb(0,65,255)'],
+    [0, 'rgb(0,150,255)'],
+    [5, 'rgb(185,235,255)'],
+    [10, 'rgb(255,255,240)'],
+    [15, 'rgb(255,255,150)'],
+    [20, 'rgb(250,245,0)'],
+    [25, 'rgb(255,153,0)'],
+    [30, 'rgb(255,40,0)'],
+    [35, 'rgb(180,0,104)'],
+    [40, 'rgb(80,0,46)']
+  ],
+
+  precipitation10m: [
+    [1, 'rgb(160,210,255)'],
+    [3, 'rgb(33,140,255)'],
+    [5, 'rgb(0,65,255)'],
+    [10, 'rgb(250,245,0)'],
+    [15, 'rgb(255,153,0)'],
+    [20, 'rgb(255,40,0)'],
+    [30, 'rgb(180,0,104)']
+  ],
+
+  precipitation1h: [
+    [1, 'rgb(160,210,255)'],
+    [5, 'rgb(33,140,255)'],
+    [10, 'rgb(0,65,255)'],
+    [20, 'rgb(250,245,0)'],
+    [30, 'rgb(255,153,0)'],
+    [50, 'rgb(255,40,0)'],
+    [80, 'rgb(180,0,104)']
+  ],
+
+  precipitation3h: [
+    [20, 'rgb(160,210,255)'],
+    [40, 'rgb(33,140,255)'],
+    [60, 'rgb(0,65,255)'],
+    [80, 'rgb(250,245,0)'],
+    [100, 'rgb(255,153,0)'],
+    [120, 'rgb(255,40,0)'],
+    [150, 'rgb(180,0,104)']
+  ],
+
+  precipitation24h: [
+    [50, 'rgb(160,210,255)'],
+    [80, 'rgb(33,140,255)'],
+    [100, 'rgb(0,65,255)'],
+    [150, 'rgb(250,245,0)'],
+    [200, 'rgb(255,153,0)'],
+    [250, 'rgb(255,40,0)'],
+    [300, 'rgb(180,0,104)']
+  ],
+
+  snow6h: [
+    [1, 'rgb(160,210,255)'],
+    [5, 'rgb(33,140,255)'],
+    [10, 'rgb(0,65,255)'],
+    [15, 'rgb(250,245,0)'],
+    [20, 'rgb(255,153,0)'],
+    [30, 'rgb(255,40,0)'],
+    [50, 'rgb(180,0,104)']
+  ],
+
+  snow12h: [
+    [1, 'rgb(160,210,255)'],
+    [5, 'rgb(33,140,255)'],
+    [10, 'rgb(0,65,255)'],
+    [20, 'rgb(250,245,0)'],
+    [30, 'rgb(255,153,0)'],
+    [50, 'rgb(255,40,0)'],
+    [70, 'rgb(180,0,104)']
+  ],
+
+  snow24h: [
+    [1, 'rgb(160,210,255)'],
+    [10, 'rgb(33,140,255)'],
+    [20, 'rgb(0,65,255)'],
+    [30, 'rgb(250,245,0)'],
+    [50, 'rgb(255,153,0)'],
+    [70, 'rgb(255,40,0)'],
+    [100, 'rgb(180,0,104)']
+  ],
+
+  humidity: [
+    [0, 'rgb(84,6,0)'],
+    [10, 'rgb(118,17,0)'],
+    [20, 'rgb(171,74,1)'],
+    [30, 'rgb(231,135,7)'],
+    [40, 'rgb(255,200,70)'],
+    [50, 'rgb(255,255,240)'],
+    [60, 'rgb(128,248,231)'],
+    [70, 'rgb(31,194,211)'],
+    [80, 'rgb(0,114,154)'],
+    [90, 'rgb(0,75,150)'],
+    [100, 'rgb(1,31,125)']
+  ],
+
+  wind: [
+    [0, 'rgb(242,242,255)'],
+    [6, 'rgb(0,65,255)'],
+    [10, 'rgb(250,245,0)'],
+    [15, 'rgb(255,153,0)'],
+    [20, 'rgb(255,40,0)'],
+    [25, 'rgb(180,0,104)']
+  ],
+
+  sun1h: [
+    [0.1, 'rgb(0,65,255)'],
+    [0.3, 'rgb(185,235,255)'],
+    [0.5, 'rgb(250,245,0)'],
+    [0.7, 'rgb(255,153,0)'],
+    [0.9, 'rgb(255,40,0)'],
+    [1.0, 'rgb(180,0,104)']
+  ],
+
+  snow: [
+    [5, 'rgb(160,210,255)'],
+    [19, 'rgb(33,140,255)'],
+    [49, 'rgb(0,65,255)'],
+    [99, 'rgb(250,245,0)'],
+    [149, 'rgb(255,153,0)'],
+    [199, 'rgb(255,40,0)'],
+    [200, 'rgb(180,0,104)']
+  ]
+};
+
+
+/* =========================================================
+   色判定
+========================================================= */
+
+function getColor(key, val) {
+
+  const legendData =
+    elementLegends[key];
+
+  if (!legendData)
+    return '#0ff';
+
+  let result = null;
+
+  for (const [threshold, color] of legendData) {
+
+    if (val >= threshold) {
+      result = color;
+    } else {
+      break;
+    }
+  }
+
+  return result;
+}
+
+
+/* =========================================================
+   凡例表示
+========================================================= */
+
+function updateLegend(key) {
+
+  const data =
+    elementLegends[key] || [];
+
+  legend.innerHTML =
+    data
+      .map(([value, color]) => {
+
+        return `
+          <div>
+            <span
+              class="legend-color"
+              style="background:${color}"
+            ></span>${value}
+          </div>
+        `;
+
+      })
+      .reverse()
+      .join('');
+}
+
+
+/* =========================================================
+   ポップアップ
+========================================================= */
+
 const popup = new maplibregl.Popup({
   closeButton: true,
   closeOnClick: true,
   className: 'semi-transparent-popup'
 });
+
 let lastKey = null;
 
-/* ===== 凡例 ===== */
-function updateLegend(key) {
-  const items = [];
-  switch (key) {
-    case 'temp':
-      items.push(
-        ["-5 以下","0,32,128"],["-4.9〜-0.1","0,65,255"],["0〜4.9","0,150,255"],
-        ["5〜9.9","185,235,255"],["10〜14.9","255,255,240"],["15〜19.9","255,255,150"],
-        ["20〜24.9","250,245,0"],["25〜29.9","255,153,0"],["30〜34.9","255,40,0"],["35 以上","180,0,104"]
-      );
-      break;
-    case 'humidity':
-      items.push(
-        ["0〜9","84,6,0"],["10〜19","118,17,0"],["20〜29","171,74,1"],
-        ["30〜39","231,135,7"],["40〜49","255,200,70"],["50〜59","255,255,240"],
-        ["60〜69","128,248,231"],["70〜79","31,194,211"],["80〜89","0,114,154"],
-        ["90〜99","0,75,150"],["100","1,31,125"]
-      );
-      break;
-    case 'sun1h':
-      items.push(
-        ["0.0〜0.1","0,65,255"],["0.2〜0.3","185,235,255"],["0.4〜0.5","250,245,0"],
-        ["0.6〜0.7","255,153,0"],["0.8〜0.9","255,40,0"],["1.0","180,0,104"]
-      );
-      break;
-    case 'wind':
-      items.push(
-        ["0〜5.9","242,242,255"],["6〜9.9","0,65,255"],["10〜14.9","250,245,0"],
-        ["15〜19.9","255,153,0"],["20〜24.9","255,40,0"],["25 以上","180,0,104"]
-      );
-      break;
-    case 'precipitation10m':
-    case 'precipitation1h':
-    case 'precipitation3h':
-    case 'precipitation24h':
-      items.push(
-        ["0〜0.5","242,242,255"],["1〜4.5","160,210,255"],["5〜9.5","33,140,255"],
-        ["10〜19.5","0,65,255"],["20〜29.5","250,245,0"],["30〜49.5","255,153,0"],
-        ["50〜79.5","255,40,0"],["80以上","180,0,104"]
-      );
-      break;
-    case 'snow':
-    case 'snow1h':
-    case 'snow6h':
-    case 'snow12h':
-    case 'snow24h':
-      items.push(
-        ["5 以下","160,210,255"],["6〜19","33,140,255"],["20〜49","0,65,255"],
-        ["50〜99","250,245,0"],["100〜149","255,153,0"],["150〜199","255,40,0"],["200以上","180,0,104"]
-      );
-      break;
-  }
-  legend.innerHTML = '';
-  items.reverse().forEach(([label, color]) => {
-    const div = document.createElement('div');
-    div.innerHTML = `<span class="legend-color" style="background:rgb(${color})"></span>${label}`;
-    legend.appendChild(div);
-  });
+
+/* =========================================================
+   進捗
+========================================================= */
+
+function updateProgress(val) {
+
+  const pct =
+    (val / MAX_STEPS) * 100;
+
+  sliderProgress.style.width =
+    pct + '%';
 }
 
-/* ===== 描画 ===== */
-async function draw(key) {
+
+/* =========================================================
+   JMA用step
+========================================================= */
+
+function getActualStep() {
+
+  return MAX_STEPS -
+    (+slider.value);
+}
+
+
+/* =========================================================
+   描画
+========================================================= */
+
+async function draw(
+  key,
+  step = 0,
+  knownLatest = null
+) {
+
   updateLegend(key);
 
-  if (lastKey && lastKey !== key && popup.isOpen()) popup.remove();
+  if (
+    lastKey &&
+    lastKey !== key &&
+    popup.isOpen()
+  ) {
+    popup.remove();
+  }
+
   lastKey = key;
 
-  const latest = await latestTime();
-  const fetchTime = truncateHour(latest, key);
-  document.getElementById('time').textContent = `時刻: ${formatTime(fetchTime)}`;
+  const latest =
+    knownLatest ||
+    await latestTime();
 
-  let data, table;
+  const min =
+    step * 10;
+
+  const target =
+    min === 0
+      ? latest
+      : subtractMinutes(
+          latest,
+          min
+        );
+
+  const fetchTime =
+    truncateHour(
+      target,
+      key
+    );
+
+  document.getElementById('time')
+    .textContent =
+      formatTime(fetchTime);
+
+
+  /* LIVE / PAST */
+
+  const sliderOffsetEl =
+    document.getElementById(
+      'slider-offset'
+    );
+
+  if (min === 0) {
+
+    sliderOffsetEl.textContent =
+      'LIVE';
+
+    liveBadge.className = '';
+
+    liveBadge.querySelector('span')
+      .textContent = 'LIVE';
+
+  } else {
+
+    const h =
+      Math.floor(min / 60);
+
+    const m =
+      min % 60;
+
+    sliderOffsetEl.textContent =
+      h > 0
+        ? `-${h}h${m > 0 ? m + 'm' : ''}`
+        : `-${m}m`;
+
+    liveBadge.className =
+      'past';
+
+    liveBadge.querySelector('span')
+      .textContent = 'PAST';
+  }
+
+
+  /* =====================================================
+     データ取得
+  ===================================================== */
+
+  let data;
+  let table;
+
   try {
-    data = await (await fetch(`https://www.jma.go.jp/bosai/amedas/data/map/${fetchTime}.json`)).json();
-    table = await (await fetch('https://www.jma.go.jp/bosai/amedas/const/amedastable.json')).json();
+
+    [
+      data,
+      table
+    ] = await Promise.all([
+
+      fetch(
+        `https://www.jma.go.jp/bosai/amedas/data/map/${fetchTime}.json`,
+        {
+          cache: 'no-store'
+        }
+      ).then(r => r.json()),
+
+      fetch(
+        'https://www.jma.go.jp/bosai/amedas/const/amedastable.json',
+        {
+          cache: 'no-store'
+        }
+      ).then(r => r.json())
+
+    ]);
+
   } catch {
+
     return;
   }
 
+
+  /* =====================================================
+     GeoJSON
+  ===================================================== */
+
   const features = [];
+
   for (const code in data) {
-    const point = data[code];
-    if (!point[key]) continue;
 
-    const value = point[key][0];
-    if ((key.startsWith('precipitation') || key.startsWith('snow') || key === 'wind') && (value === 0 || value === null)) continue;
-    if (value === null) continue;
+    const pt =
+      data[code];
 
-    const info = table[code];
-    if (!info || !info.lat || !info.lon) continue;
+    if (!pt[key])
+      continue;
 
-    const lat = Number(info.lat[0]) + Number(info.lat[1] || 0) / 60;
-    const lon = Number(info.lon[0]) + Number(info.lon[1] || 0) / 60;
-    if (isNaN(lat) || isNaN(lon)) continue;
+    const val =
+      pt[key][0];
 
-    const color = getColor(key, value);
-    if (!color) continue;
+    if (val === null)
+      continue;
+
+    if (
+      (
+        key.startsWith('precipitation') ||
+        key.startsWith('snow') ||
+        key === 'wind'
+      ) &&
+      val === 0
+    ) {
+      continue;
+    }
+
+    const info =
+      table[code];
+
+    if (
+      !info?.lat ||
+      !info?.lon
+    ) {
+      continue;
+    }
+
+    const lat =
+      +info.lat[0] +
+      (+info.lat[1] || 0) / 60;
+
+    const lon =
+      +info.lon[0] +
+      (+info.lon[1] || 0) / 60;
+
+    if (
+      isNaN(lat) ||
+      isNaN(lon)
+    ) {
+      continue;
+    }
+
+    const color =
+      getColor(
+        key,
+        val
+      );
+
+    if (!color)
+      continue;
 
     features.push({
+
       type: 'Feature',
-      geometry: { type: 'Point', coordinates: [lon, lat] },
+
+      geometry: {
+        type: 'Point',
+        coordinates: [
+          lon,
+          lat
+        ]
+      },
+
       properties: {
-        name: info.kjName || code,
-        value,
+
+        name:
+          info.kjName ||
+          code,
+
+        val,
+
         color
       }
     });
   }
 
-  const geojson = { type: 'FeatureCollection', features };
 
-  if (map.getSource('amedas')) {
-    map.getSource('amedas').setData(geojson);
+  const geojson = {
+
+    type:
+      'FeatureCollection',
+
+    features
+  };
+
+
+  /* =====================================================
+     MapLibre
+  ===================================================== */
+
+  if (
+    map.getSource('amedas')
+  ) {
+
+    map.getSource('amedas')
+      .setData(geojson);
+
   } else {
-    map.addSource('amedas', { type: 'geojson', data: geojson });
+
+    map.addSource(
+      'amedas',
+      {
+        type: 'geojson',
+        data: geojson
+      }
+    );
+
 
     map.addLayer({
-      id: 'amedas-point-display',
-      type: 'circle',
-      source: 'amedas',
+
+      id:
+        'amedas-pts',
+
+      type:
+        'circle',
+
+      source:
+        'amedas',
+
       paint: {
-        'circle-radius': 2.5,
-        'circle-color': ['get', 'color'],
-        'circle-opacity': 1
+
+        'circle-radius':
+          2.5,
+
+        'circle-color':
+          ['get', 'color'],
+
+        'circle-opacity':
+          1
       }
+
     });
+
 
     map.addLayer({
-      id: 'amedas-point-hit',
-      type: 'circle',
-      source: 'amedas',
+
+      id:
+        'amedas-hit',
+
+      type:
+        'circle',
+
+      source:
+        'amedas',
+
       paint: {
-        'circle-radius': 15,
-        'circle-opacity': 0
-      }
-    });
 
-    map.on('click', 'amedas-point-hit', e => {
-      const f = e.features[0];
-      let valueText = f.properties.value;
+        'circle-radius':
+          14,
 
-      switch (elem.value) {
-        case 'temp': valueText = `気温: ${valueText} ℃`; break;
-        case 'humidity': valueText = `湿度: ${valueText} %`; break;
-        case 'precipitation10m': valueText = `降水量10m: ${valueText} mm`; break;
-        case 'precipitation1h': valueText = `降水量1h: ${valueText} mm`; break;
-        case 'precipitation3h': valueText = `降水量3h: ${valueText} mm`; break;
-        case 'precipitation24h': valueText = `降水量24h: ${valueText} mm`; break;
-        case 'wind': valueText = `風速: ${valueText} m/s`; break;
-        case 'sun1h': valueText = `日照時間: ${valueText} h`; break;
-        case 'snow': valueText = `積雪深: ${valueText} cm`; break;
-        case 'snow1h': valueText = `降雪量1h: ${valueText} cm`; break;
-        case 'snow6h': valueText = `降雪量6h: ${valueText} cm`; break;
-        case 'snow12h': valueText = `降雪量12h: ${valueText} cm`; break;
-        case 'snow24h': valueText = `降雪量24h: ${valueText} cm`; break;
+        'circle-opacity':
+          0
       }
 
-      popup
-        .setLngLat(f.geometry.coordinates)
-        .setHTML(`<strong>${f.properties.name}</strong><br>${valueText}`)
-        .addTo(map);
     });
 
-    map.on('mouseenter', 'amedas-point-hit', () => map.getCanvas().style.cursor = 'pointer');
-    map.on('mouseleave', 'amedas-point-hit', () => map.getCanvas().style.cursor = '');
+
+    const unitMap = {
+
+      temp: '℃',
+      humidity: '%',
+
+      precipitation10m: 'mm',
+      precipitation1h: 'mm',
+      precipitation3h: 'mm',
+      precipitation24h: 'mm',
+
+      wind: 'm/s',
+
+      sun1h: 'h',
+
+      snow: 'cm',
+      snow1h: 'cm',
+      snow6h: 'cm',
+      snow12h: 'cm',
+      snow24h: 'cm'
+    };
+
+
+    const nameMap = {
+
+      temp: '気温',
+      humidity: '湿度',
+
+      precipitation10m:
+        '降水量10分',
+
+      precipitation1h:
+        '降水量1時間',
+
+      precipitation3h:
+        '降水量3時間',
+
+      precipitation24h:
+        '降水量24時間',
+
+      wind:
+        '風速',
+
+      sun1h:
+        '日照時間',
+
+      snow:
+        '積雪深',
+
+      snow1h:
+        '降雪1時間',
+
+      snow6h:
+        '降雪6時間',
+
+      snow12h:
+        '降雪12時間',
+
+      snow24h:
+        '降雪24時間'
+    };
+
+
+    map.on(
+      'click',
+      'amedas-hit',
+      e => {
+
+        const f =
+          e.features[0];
+
+        const k =
+          elem.value;
+
+        popup
+          .setLngLat(
+            f.geometry.coordinates
+          )
+          .setHTML(
+            `<strong>${
+              f.properties.name
+            }</strong>` +
+            `${nameMap[k]}: ` +
+            `${f.properties.val} ` +
+            `${unitMap[k]}`
+          )
+          .addTo(map);
+      }
+    );
+
+
+    map.on(
+      'mouseenter',
+      'amedas-hit',
+      () => {
+
+        map.getCanvas()
+          .style.cursor =
+          'pointer';
+      }
+    );
+
+
+    map.on(
+      'mouseleave',
+      'amedas-hit',
+      () => {
+
+        map.getCanvas()
+          .style.cursor =
+          '';
+      }
+    );
   }
 }
 
-/* ===== 初期描画 ===== */
-(function waitDraw() {
-  if (map.isStyleLoaded()) draw(elem.value);
-  else setTimeout(waitDraw, 50);
+
+/* =========================================================
+   初期化
+========================================================= */
+
+const savedElem =
+  getCookie('amedas_elem');
+
+if (savedElem) {
+  elem.value =
+    savedElem;
+}
+
+(function wait() {
+
+  if (
+    map.isStyleLoaded()
+  ) {
+
+    slider.value =
+      String(MAX_STEPS);
+
+    updateProgress(
+      MAX_STEPS
+    );
+
+    draw(
+      elem.value,
+      getActualStep()
+    );
+
+  } else {
+
+    setTimeout(
+      wait,
+      50
+    );
+  }
+
 })();
 
-/* ===== select & Cookie ===== */
-const lastElem = getCookie('amedas_elem');
-if (lastElem) elem.value = lastElem;
 
-elem.onchange = e => {
-  setCookie('amedas_elem', e.target.value);
-  draw(e.target.value);
-};
+/* =========================================================
+   表示項目変更
+========================================================= */
 
-/* ===== 定期更新 ===== */
-setInterval(() => draw(elem.value), 1000);
+elem.onchange =
+  e => {
+
+    setCookie(
+      'amedas_elem',
+      e.target.value
+    );
+
+    draw(
+      e.target.value,
+      getActualStep()
+    );
+  };
+
+
+/* =========================================================
+   スライダー操作
+========================================================= */
+
+slider.oninput =
+  e => {
+
+    const uiValue =
+      +e.target.value;
+
+    updateProgress(
+      uiValue
+    );
+
+    const actualStep =
+      MAX_STEPS -
+      uiValue;
+
+    draw(
+      elem.value,
+      actualStep
+    );
+  };
+
+
+/* =========================================================
+   最新データ自動監視
+========================================================= */
+
+let lastLatestTime = null;
+let checkingLatest = false;
+
+async function checkForNewData() {
+
+  if (checkingLatest)
+    return;
+
+  checkingLatest = true;
+
+  try {
+
+    const latest =
+      await latestTime();
+
+    if (
+      lastLatestTime === null
+    ) {
+
+      lastLatestTime =
+        latest;
+
+      return;
+    }
+
+    if (
+      latest !==
+      lastLatestTime
+    ) {
+
+      lastLatestTime =
+        latest;
+
+      await draw(
+        elem.value,
+        getActualStep(),
+        latest
+      );
+    }
+
+  } catch {
+
+  } finally {
+
+    checkingLatest =
+      false;
+  }
+}
+
+
+/* 10秒ごとに確認 */
+
+setInterval(
+  checkForNewData,
+  10000
+);
+
+
+/* 初回 */
+
+setTimeout(
+  checkForNewData,
+  1000
+);
+
 </script>
+
 </body>
 </html>
