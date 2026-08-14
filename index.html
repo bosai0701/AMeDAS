@@ -28,8 +28,6 @@ body {
   height: 100%;
 }
 
-/* ===== ポップアップ ===== */
-
 .semi-transparent-popup .maplibregl-popup-content {
   background: rgba(8, 18, 32, 0.96);
   border: 1px solid rgba(0, 210, 255, 0.25);
@@ -65,8 +63,6 @@ body {
 .semi-transparent-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
   border-left-color: rgba(8,18,32,0.96);
 }
-
-/* ===== 左上パネル ===== */
 
 #panel-top {
   position: absolute;
@@ -135,8 +131,6 @@ body {
   color: #e2e8f0;
 }
 
-/* ===== 凡例 ===== */
-
 #legend {
   position: absolute;
   bottom: 80px;
@@ -161,8 +155,6 @@ body {
   vertical-align: middle;
 }
 
-/* ===== Google帰属 ===== */
-
 #google-attr {
   position: absolute;
   right: 12px;
@@ -172,8 +164,6 @@ body {
   color: rgba(200,210,220,0.5);
   pointer-events: none;
 }
-
-/* ===== スライダーパネル ===== */
 
 #slider-panel {
   position: absolute;
@@ -485,11 +475,6 @@ slider.value = String(MAX_STEPS);
 sliderWrap.appendChild(slider);
 sliderPanel.appendChild(sliderWrap);
 
-
-/* =========================================================
-   LIVE / PAST
-========================================================= */
-
 const liveBadge = document.createElement('div');
 
 liveBadge.id = 'live-badge';
@@ -746,7 +731,13 @@ const elementLegends = {
     [25, 'rgb(180,0,104)']
   ],
 
+  /* =======================================================
+     日照時間
+     0未満～0は白色で表示
+  ======================================================= */
+
   sun1h: [
+    [0, 'rgb(255,255,255)'],
     [0.1, 'rgb(0,65,255)'],
     [0.3, 'rgb(185,235,255)'],
     [0.5, 'rgb(250,245,0)'],
